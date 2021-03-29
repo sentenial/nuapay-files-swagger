@@ -1,0 +1,1171 @@
+openapi: 3.0.1
+info:
+  title: File Payment Files Upload With Funding API
+  description: Sentenial Payment Files And Funding API
+  version: 1.0.0
+externalDocs:
+  url: 'https://developer.nuapay.com'
+servers:
+  - url: 'https://sentenial.com'
+    variables: {}
+paths:
+  /files:
+    get:
+      tags:
+        - files-end-point
+      summary: Get Files
+      operationId: getFiles
+      parameters:
+        - name: fromdatetime
+          in: query
+          required: false
+          schema:
+            type: string
+            description: 'Submission from date time in the format, yyyy-MM-ddTHH:mm:ss'
+        - name: todatetime
+          in: query
+          required: false
+          schema:
+            type: string
+            description: 'Submission to date time in the format, yyyy-MM-ddTHH:mm:ss'
+        - name: fileStatuses
+          in: query
+          required: false
+          schema:
+            type: array
+            description: A number of statuses can be queried within a single request by providing multiple occurrences of the parameter. If not provided all statuses will be returned
+            items:
+              type: string
+              description: A number of statuses can be queried within a single request by providing multiple occurrences of the parameter. If not provided all statuses will be returned
+              enum:
+                - QUEUED
+                - PARTIALLY_REVOKED
+                - CANCELLED
+                - APPROVAL_REJECTED
+                - COMPLETE
+                - COMPLETE_WITH_ERRORS
+                - REJECTED
+                - ACCEPTED
+                - IN_PROGRESS
+                - REVOKED
+                - RETURNED
+                - PARTIALLY_ACCEPTED
+                - APPROVAL_PENDING
+        - name: filereference
+          in: query
+          required: false
+          schema:
+            type: string
+            description: File reference
+        - name: pagenumber
+          in: query
+          description: default page is 1
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+            format: int32
+        - name: pagesize
+          in: query
+          description: default pagesize is 20
+          required: false
+          schema:
+            maximum: 100
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilesResponseEnvelope'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '405':
+          description: Method Not Allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - oauth:
+            - 'READ:FILE'
+    post:
+      tags:
+        - files-end-point
+      summary: Payment Files Upload Service.
+      operationId: files
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileResponseEnvelope'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '405':
+          description: Method Not Allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - oauth:
+            - 'WRITE:FILE'
+  /cops:
+    post:
+      tags:
+        - cops-endpoint
+      summary: Confirmation Of Payee Service.
+      operationId: badBoysWhatYeGonnaDo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CopsRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CopsResponseEnvelope'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '405':
+          description: Method Not Allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - oauth:
+            - 'WRITE:COP'
+  '/files/{fileId}/batches/{batchId}/payments/{paymentId}':
+    get:
+      tags:
+        - payments-end-point
+      summary: Get the payments in a batch.
+      operationId: payments
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponseEnvelope'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '405':
+          description: Method Not Allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - oauth:
+            - 'READ:FILE'
+  '/files/{fileId}/batches/{batchId}/payments':
+    get:
+      tags:
+        - payments-end-point
+      summary: Get the payments in a batch.
+      operationId: paymentsWithQueryStatus
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: paymentStatus
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentsResponseEnvelope'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '405':
+          description: Method Not Allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - oauth:
+            - 'READ:FILE'
+  '/files/{fileId}/batches/{batchId}':
+    get:
+      tags:
+        - batches-end-point
+      summary: Get Details of an individual batch in a file
+      operationId: getFile
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '405':
+          description: Method Not Allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - oauth:
+            - 'READ:FILE'
+  '/files/{fileId}/batches':
+    get:
+      tags:
+        - batches-end-point
+      summary: Get Batches For A File
+      operationId: getFile_1
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: batchStatuses
+          in: query
+          required: false
+          schema:
+            type: array
+            description: A number of statuses can be queried within a single request by providing multiple occurrences of the parameter. If not provided all statuses will be returned
+            items:
+              type: string
+              description: A number of statuses can be queried within a single request by providing multiple occurrences of the parameter. If not provided all statuses will be returned
+              enum:
+                - CANCELLED
+                - APPROVAL_REJECTED
+                - COMPLETE_WITH_ERRORS
+                - REJECTED
+                - IN_PROGRESS
+                - ACCEPTED
+                - COMPLETE
+                - RETURNED
+                - PARTIALLY_ACCEPTED
+                - APPROVAL_PENDING
+        - name: creditorname
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Creditor name. This parameter supports searching with wildcards
+        - name: creditoraccountidentication
+          in: query
+          required: false
+          schema:
+            type: string
+            description: creditor account identification.
+        - name: scheme
+          in: query
+          required: false
+          schema:
+            type: string
+            description: originator account scheme.
+        - name: batchreference
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Batch reference
+        - name: pagenumber
+          in: query
+          description: default page is 1
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+            format: int32
+        - name: pagesize
+          in: query
+          description: default pagesize is 20
+          required: false
+          schema:
+            maximum: 100
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchesResponseEnvelope'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '405':
+          description: Method Not Allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - oauth:
+            - 'READ:FILE'
+  '/files/{fileId}':
+    get:
+      tags:
+        - files-end-point
+      summary: Get a particular File by its id
+      operationId: getFile_2
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileResponseEnvelope'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '405':
+          description: Method Not Allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - oauth:
+            - 'READ:FILE'
+components:
+  schemas:
+    Account:
+      type: object
+      properties:
+        name:
+          type: string
+        currency:
+          type: string
+          enum:
+            - GBP
+            - EUR
+        iban:
+          type: string
+        other:
+          $ref: '#/components/schemas/Other'
+    Address:
+      type: object
+      properties:
+        country:
+          maxLength: 2
+          minLength: 2
+          type: string
+          description: Country ISO Code
+        line1:
+          maxLength: 70
+          minLength: 0
+          type: string
+          description: Address Line 1
+        line2:
+          maxLength: 70
+          minLength: 0
+          type: string
+          description: Address Line 2
+        line3:
+          maxLength: 70
+          minLength: 0
+          type: string
+          description: Address Line 3
+        town:
+          maxLength: 70
+          minLength: 0
+          type: string
+          description: Address Line 3
+        postCode:
+          maxLength: 16
+          minLength: 0
+          type: string
+          description: Postal Code
+    Batch:
+      required:
+        - categoryPurpose
+        - creditor
+        - creditorAccount
+        - payments
+        - requestedExecutionDate
+        - ultimateCreditor
+      type: object
+      properties:
+        batchReference:
+          type: string
+        totalAmount:
+          $ref: '#/components/schemas/Value'
+        totalPayments:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+        creditorAccount:
+          $ref: '#/components/schemas/Account'
+        requestedExecutionDate:
+          type: string
+          format: date
+        creditor:
+          $ref: '#/components/schemas/PaymentParty'
+        ultimateCreditor:
+          $ref: '#/components/schemas/PaymentParty'
+        categoryPurpose:
+          type: string
+          description: |
+            BONU - BonusPayment
+            CASH - CashManagementTransfer
+            CBLK - Card Bulk Clearing
+            CCRD - Credit Card Payment
+            CORT - TradeSettlementPayment
+            DCRD - Debit Card Payment
+            DIVI - Dividend
+            DVPM - DeliverAgainstPayment
+            EPAY - Epayment
+            FCOL - Fee Collection
+            GOVT - GovernmentPayment
+            HEDG - Hedging
+            ICCP - Irrevocable Credit Card Payment
+            IDCP - Irrevocable Debit Card Payment
+            INTC - IntraCompanyPayment
+            INTE - Interest
+            LOAN - Loan
+            MP2B - Commercial
+            MP2P - Consumer
+            OTHR - OtherPayment
+            PENS - PensionPayment
+            RVPM - ReceiveAgainstPayment
+            SALA - SalaryPayment
+            SECU - Securities
+            SSBE - SocialSecurityBenefit
+            SUPP - SupplierPayment
+            TAXS - TaxPayment
+            TRAD - Trade
+            TREA - TreasuryPayment
+            VATX - ValueAddedTaxPayment
+            WHLD - WithHolding
+          enum:
+            - BONU
+            - CASH
+            - CBLK
+            - CCRD
+            - CORT
+            - DCRD
+            - DIVI
+            - DVPM
+            - EPAY
+            - FCOL
+            - GOVT
+            - HEDG
+            - ICCP
+            - IDCP
+            - INTC
+            - INTE
+            - LOAN
+            - MP2B
+            - MP2P
+            - OTHR
+            - PENS
+            - RVPM
+            - SALA
+            - SECU
+            - SSBE
+            - SUPP
+            - TAXS
+            - TRAD
+            - TREA
+            - VATX
+            - WHLD
+        payments:
+          maxItems: 10000
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+    FileRequest:
+      required:
+        - batches
+        - fileReference
+        - fileType
+      type: object
+      properties:
+        fileReference:
+          type: string
+        fileType:
+          type: string
+          default: CREDIT_TRANSFER
+          enum:
+            - CREDIT_TRANSFER
+        batches:
+          maxItems: 100
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/Batch'
+    Other:
+      type: object
+      properties:
+        scheme:
+          type: string
+        id:
+          type: string
+    Payment:
+      required:
+        - creditor
+        - creditorAccount
+        - ultimateCreditor
+        - value
+      type: object
+      properties:
+        value:
+          $ref: '#/components/schemas/Value'
+        creditor:
+          $ref: '#/components/schemas/PaymentParty'
+        creditorAccount:
+          $ref: '#/components/schemas/Account'
+        ultimateCreditor:
+          $ref: '#/components/schemas/PaymentParty'
+        endToEndIdentification:
+          maxLength: 35
+          minLength: 1
+          type: string
+        categoryPurpose:
+          type: string
+          description: |
+            BONU - BonusPayment
+            CASH - CashManagementTransfer
+            CBLK - Card Bulk Clearing
+            CCRD - Credit Card Payment
+            CORT - TradeSettlementPayment
+            DCRD - Debit Card Payment
+            DIVI - Dividend
+            DVPM - DeliverAgainstPayment
+            EPAY - Epayment
+            FCOL - Fee Collection
+            GOVT - GovernmentPayment
+            HEDG - Hedging
+            ICCP - Irrevocable Credit Card Payment
+            IDCP - Irrevocable Debit Card Payment
+            INTC - IntraCompanyPayment
+            INTE - Interest
+            LOAN - Loan
+            MP2B - Commercial
+            MP2P - Consumer
+            OTHR - OtherPayment
+            PENS - PensionPayment
+            RVPM - ReceiveAgainstPayment
+            SALA - SalaryPayment
+            SECU - Securities
+            SSBE - SocialSecurityBenefit
+            SUPP - SupplierPayment
+            TAXS - TaxPayment
+            TRAD - Trade
+            TREA - TreasuryPayment
+            VATX - ValueAddedTaxPayment
+            WHLD - WithHolding
+          enum:
+            - BONU
+            - CASH
+            - CBLK
+            - CCRD
+            - CORT
+            - DCRD
+            - DIVI
+            - DVPM
+            - EPAY
+            - FCOL
+            - GOVT
+            - HEDG
+            - ICCP
+            - IDCP
+            - INTC
+            - INTE
+            - LOAN
+            - MP2B
+            - MP2P
+            - OTHR
+            - PENS
+            - RVPM
+            - SALA
+            - SECU
+            - SSBE
+            - SUPP
+            - TAXS
+            - TRAD
+            - TREA
+            - VATX
+            - WHLD
+        remittanceInformation:
+          $ref: '#/components/schemas/RemittanceInformation'
+    PaymentParty:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          $ref: '#/components/schemas/Address'
+    RemittanceInformation:
+      type: object
+      properties:
+        reference:
+          maxLength: 35
+          minLength: 1
+          type: string
+          description: 'Unique reference, as assigned by the creditor, to unambiguously refer to the payment transaction. Usage: If available, the initiating party should provide this reference in the structured remittance information, to enable reconciliation by the creditor upon receipt of the amount of money. If the business context requires the use of a creditor reference or a payment remit identification, and only one identifier can be passed through the end-to-end chain, the creditor’s reference or payment remittance identification should be quoted in the end-to-end transaction identification. OB: The Faster Payments Scheme can only accept 18 characters for the ReferenceInformation field - which is where this ISO field will be mapped.'
+        unstructured:
+          maxLength: 140
+          minLength: 1
+          type: string
+          description: 'Information supplied to enable the matching/reconciliation of an entry with the items that the payment is intended to settle, such as commercial invoices in an accounts’ receivable system, in an unstructured form.'
+      description: 'Information supplied to enable the matching of an entry with the items that the transfer is intended to settle, such as commercial invoices in an accounts’ receivable system.'
+    Value:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+          enum:
+            - GBP
+            - EUR
+    FileResponseEnvelope:
+      type: object
+      properties:
+        uri:
+          type: string
+        data:
+          $ref: '#/components/schemas/FileSummary'
+    FileSummary:
+      required:
+        - batchDetailsUri
+        - fileId
+        - fileName
+        - fileReference
+        - fileStatus
+        - totalBatches
+        - totalFileAmount
+        - uploadDate
+        - uri
+      type: object
+      properties:
+        uri:
+          type: string
+        fileId:
+          type: string
+        fileName:
+          type: string
+        totalBatches:
+          type: integer
+          format: int32
+        totalFileAmount:
+          $ref: '#/components/schemas/Value'
+        uploadDate:
+          type: string
+          format: date
+        fileStatus:
+          type: string
+          enum:
+            - QUEUED
+            - PARTIALLY_REVOKED
+            - CANCELLED
+            - APPROVAL_REJECTED
+            - COMPLETE
+            - COMPLETE_WITH_ERRORS
+            - REJECTED
+            - ACCEPTED
+            - IN_PROGRESS
+            - REVOKED
+            - RETURNED
+            - PARTIALLY_ACCEPTED
+            - APPROVAL_PENDING
+        fileReference:
+          type: string
+        batchDetailsUri:
+          type: string
+    ErrorDetailsItem:
+      type: object
+      description: Holds list of input validation errors
+    ErrorResponse:
+      type: object
+      properties:
+        returnCode:
+          type: string
+          description: Error type code
+        returnDescription:
+          type: string
+          description: Error type description
+        details:
+          type: array
+          description: Holds list of input validation errors
+          items:
+            $ref: '#/components/schemas/ErrorDetailsItem'
+    CopsRequest:
+      required:
+        - account
+      type: object
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+        accountType:
+          type: string
+          description: Business - A business owned bank account. Personal - A Person owned bank account
+          enum:
+            - Business
+            - Personal
+    CopsResponse:
+      required:
+        - name
+      type: object
+      properties:
+        matched:
+          type: boolean
+        copsReasonCode:
+          type: string
+          enum:
+            - ANNM
+            - AC01
+            - MBAM
+            - OPTO
+            - ACNS
+            - IVCR
+            - BANM
+            - PANM
+            - BAMM
+            - PAMM
+            - CASS
+            - SCNS
+        name:
+          maxLength: 140
+          minLength: 1
+          type: string
+      description: PaymentResponse
+    CopsResponseEnvelope:
+      required:
+        - data
+        - uri
+      type: object
+      properties:
+        uri:
+          type: string
+          description: Holds resource uri.
+        data:
+          $ref: '#/components/schemas/CopsResponse'
+    PaymentResponseEnvelope:
+      type: object
+      properties:
+        uri:
+          type: string
+        data:
+          $ref: '#/components/schemas/PaymentSummary'
+    PaymentSummary:
+      required:
+        - id
+        - payment
+        - status
+        - uri
+      type: object
+      properties:
+        id:
+          type: string
+        uri:
+          type: string
+        payment:
+          $ref: '#/components/schemas/Payment'
+        executionDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+            - COMPETE
+            - REJECTED
+        reasonCode:
+          type: string
+        creditTransferUri:
+          $ref: '#/components/schemas/RestResponseLink'
+    RestResponseLink:
+      type: object
+    PaymentsResponseEnvelope:
+      required:
+        - uri
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentSummary'
+        uri:
+          type: string
+        page:
+          $ref: '#/components/schemas/RestResponsePaginationDetails'
+        sort:
+          type: array
+          items:
+            type: string
+    RestResponsePaginationDetails:
+      type: object
+      properties:
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+    BatchSummary:
+      required:
+        - batchStatus
+        - categoryPurpose
+        - debtor
+        - debtorAccount
+        - paymentsUri
+        - requestedExecutionDate
+        - ultimateDebtor
+      type: object
+      properties:
+        uri:
+          type: string
+        batchReference:
+          type: string
+        totalAmount:
+          $ref: '#/components/schemas/Value'
+        totalPayments:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+        debtorAccount:
+          $ref: '#/components/schemas/Account'
+        requestedExecutionDate:
+          type: string
+          format: date
+        debtor:
+          $ref: '#/components/schemas/PaymentParty'
+        ultimateDebtor:
+          $ref: '#/components/schemas/PaymentParty'
+        categoryPurpose:
+          type: string
+          description: |
+            BONU - BonusPayment
+            CASH - CashManagementTransfer
+            CBLK - Card Bulk Clearing
+            CCRD - Credit Card Payment
+            CORT - TradeSettlementPayment
+            DCRD - Debit Card Payment
+            DIVI - Dividend
+            DVPM - DeliverAgainstPayment
+            EPAY - Epayment
+            FCOL - Fee Collection
+            GOVT - GovernmentPayment
+            HEDG - Hedging
+            ICCP - Irrevocable Credit Card Payment
+            IDCP - Irrevocable Debit Card Payment
+            INTC - IntraCompanyPayment
+            INTE - Interest
+            LOAN - Loan
+            MP2B - Commercial
+            MP2P - Consumer
+            OTHR - OtherPayment
+            PENS - PensionPayment
+            RVPM - ReceiveAgainstPayment
+            SALA - SalaryPayment
+            SECU - Securities
+            SSBE - SocialSecurityBenefit
+            SUPP - SupplierPayment
+            TAXS - TaxPayment
+            TRAD - Trade
+            TREA - TreasuryPayment
+            VATX - ValueAddedTaxPayment
+            WHLD - WithHolding
+          enum:
+            - BONU
+            - CASH
+            - CBLK
+            - CCRD
+            - CORT
+            - DCRD
+            - DIVI
+            - DVPM
+            - EPAY
+            - FCOL
+            - GOVT
+            - HEDG
+            - ICCP
+            - IDCP
+            - INTC
+            - INTE
+            - LOAN
+            - MP2B
+            - MP2P
+            - OTHR
+            - PENS
+            - RVPM
+            - SALA
+            - SECU
+            - SSBE
+            - SUPP
+            - TAXS
+            - TRAD
+            - TREA
+            - VATX
+            - WHLD
+        batchStatus:
+          type: string
+          enum:
+            - CANCELLED
+            - APPROVAL_REJECTED
+            - COMPLETE_WITH_ERRORS
+            - REJECTED
+            - IN_PROGRESS
+            - ACCEPTED
+            - COMPLETE
+            - RETURNED
+            - PARTIALLY_ACCEPTED
+            - APPROVAL_PENDING
+        paymentsUri:
+          type: string
+        postProcessingStatistics:
+          $ref: '#/components/schemas/PostProcessingStatistics'
+    PostProcessingStatistics:
+      type: object
+      properties:
+        successfulPayments:
+          type: integer
+          format: int32
+        failedPayments:
+          type: integer
+          format: int32
+        successfulValue:
+          $ref: '#/components/schemas/Value'
+        failedValue:
+          $ref: '#/components/schemas/Value'
+    BatchesResponseEnvelope:
+      required:
+        - uri
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchSummary'
+        uri:
+          type: string
+        page:
+          $ref: '#/components/schemas/RestResponsePaginationDetails'
+        sort:
+          type: array
+          items:
+            type: string
+    FilesResponseEnvelope:
+      required:
+        - uri
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileSummary'
+        uri:
+          type: string
+        page:
+          $ref: '#/components/schemas/RestResponsePaginationDetails'
+        sort:
+          type: array
+          items:
+            type: string
+  securitySchemes:
+    oauth:
+      type: oauth2
+      flows:
+        password:
+          tokenUrl: 'https://api.naupay.com.com/tokens'
+          scopes:
+            'WRITE:COP': Confirmation of payee request
+            'WRITE:FILE': Upload of files
+            'READ:FILE': List files
