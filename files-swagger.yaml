@@ -516,9 +516,14 @@ paths:
 components:
   schemas:
     Account:
+      required:
+        - currency
+        - name
       type: object
       properties:
         name:
+          maxLength: 70
+          minLength: 1
           type: string
         currency:
           type: string
@@ -537,7 +542,7 @@ components:
           maxLength: 2
           minLength: 2
           type: string
-          description: Country ISO Code
+          description: ISO3166-1 alpha-2 country code
         line1:
           maxLength: 70
           minLength: 0
@@ -565,7 +570,6 @@ components:
           description: Postal Code
     Batch:
       required:
-        - categoryPurpose
         - debtor
         - debtorAccount
         - payments
@@ -573,6 +577,8 @@ components:
       type: object
       properties:
         batchReference:
+          maxLength: 35
+          minLength: 1
           type: string
         totalAmount:
           $ref: '#/components/schemas/Value'
@@ -609,6 +615,7 @@ components:
           description: Specifies a high level purpose of the instruction based on a set of predefined ISO 20022 Message Schemas ExternalCategoryPurpose1Code Set - .Cannot be used at the same time as 'Proprietary'
         propriety:
           type: string
+      description: The system uses the value in the Category Purpose processing option to determine the instruction priority. If specified at the batch level you cannot set it at the payment level.
     FileRequest:
       required:
         - batches
@@ -633,6 +640,7 @@ components:
             $ref: '#/components/schemas/Batch'
     Other:
       required:
+        - id
         - scheme
       type: object
       properties:
@@ -676,6 +684,8 @@ components:
         remittanceInformation:
           $ref: '#/components/schemas/RemittanceInformation'
     PaymentParty:
+      required:
+        - name
       type: object
       properties:
         name:
@@ -693,7 +703,7 @@ components:
           maxLength: 35
           minLength: 1
           type: string
-          description: 'Unique reference, as assigned by the creditor, to unambiguously refer to the payment transaction. Usage: If available, the initiating party should provide this reference in the structured remittance information, to enable reconciliation by the creditor upon receipt of the amount of money. If the business context requires the use of a creditor reference or a payment remit identification, and only one identifier can be passed through the end-to-end chain, the creditor’s reference or payment remittance identification should be quoted in the end-to-end transaction identification. OB: The Faster Payments Scheme can only accept 18 characters for the ReferenceInformation field - which is where this ISO field will be mapped.'
+          description: 'Unique reference, as assigned by the debtor, to unambiguously refer to the payment transaction. Usage: If available, the initiating party should provide this reference in the structured remittance information, to enable reconciliation by the creditor upon receipt of the amount of money. If the business context requires the use of a creditor reference or a payment remit identification, and only one identifier can be passed through the end-to-end chain, the creditor’s reference or payment remittance identification should be quoted in the end-to-end transaction identification. OB: The Faster Payments Scheme can only accept 18 characters for the ReferenceInformation field - which is where this ISO field will be mapped.'
         unstructured:
           maxLength: 140
           minLength: 1
@@ -701,6 +711,9 @@ components:
           description: 'Information supplied to enable the matching/reconciliation of an entry with the items that the payment is intended to settle, such as commercial invoices in an accounts’ receivable system, in an unstructured form.'
       description: 'Information supplied to enable the matching of an entry with the items that the transfer is intended to settle, such as commercial invoices in an accounts’ receivable system.'
     Value:
+      required:
+        - amount
+        - currency
       type: object
       properties:
         amount:
@@ -711,6 +724,23 @@ components:
           enum:
             - GBP
             - EUR
+    ErrorDetailsItem:
+      type: object
+      description: Holds list of input validation errors
+    ErrorResponse:
+      type: object
+      properties:
+        returnCode:
+          type: string
+          description: Error type code
+        returnDescription:
+          type: string
+          description: Error type description
+        details:
+          type: array
+          description: Holds list of input validation errors
+          items:
+            $ref: '#/components/schemas/ErrorDetailsItem'
     FileResponseEnvelope:
       type: object
       properties:
@@ -765,23 +795,6 @@ components:
           type: string
         batchDetailsUri:
           type: string
-    ErrorDetailsItem:
-      type: object
-      description: Holds list of input validation errors
-    ErrorResponse:
-      type: object
-      properties:
-        returnCode:
-          type: string
-          description: Error type code
-        returnDescription:
-          type: string
-          description: Error type description
-        details:
-          type: array
-          description: Holds list of input validation errors
-          items:
-            $ref: '#/components/schemas/ErrorDetailsItem'
     CopsRequest:
       required:
         - account
