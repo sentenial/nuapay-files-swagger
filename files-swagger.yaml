@@ -106,7 +106,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
       security:
         - oauth:
-            - 'READ:FILE'
+            - files_read
     post:
       tags:
         - files-end-point
@@ -151,7 +151,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
       security:
         - oauth:
-            - 'WRITE:FILE'
+            - files
   /cops:
     post:
       tags:
@@ -197,7 +197,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
       security:
         - oauth:
-            - 'WRITE:COP'
+            - cops
   '/files/{fileId}/batches/{batchId}/payments/{paymentId}':
     get:
       tags:
@@ -360,7 +360,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
       security:
         - oauth:
-            - 'READ:FILE'
+            - files_read
   '/files/{fileId}/batches':
     get:
       tags:
@@ -466,7 +466,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
       security:
         - oauth:
-            - 'READ:FILE'
+            - files_read
   '/files/{fileId}':
     get:
       tags:
@@ -512,7 +512,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
       security:
         - oauth:
-            - 'READ:FILE'
+            - files_read
 components:
   schemas:
     Account:
@@ -724,23 +724,6 @@ components:
           enum:
             - GBP
             - EUR
-    ErrorDetailsItem:
-      type: object
-      description: Holds list of input validation errors
-    ErrorResponse:
-      type: object
-      properties:
-        returnCode:
-          type: string
-          description: Error type code
-        returnDescription:
-          type: string
-          description: Error type description
-        details:
-          type: array
-          description: Holds list of input validation errors
-          items:
-            $ref: '#/components/schemas/ErrorDetailsItem'
     FileResponseEnvelope:
       type: object
       properties:
@@ -795,6 +778,23 @@ components:
           type: string
         batchDetailsUri:
           type: string
+    ErrorDetailsItem:
+      type: object
+      description: Holds list of input validation errors
+    ErrorResponse:
+      type: object
+      properties:
+        returnCode:
+          type: string
+          description: Error type code
+        returnDescription:
+          type: string
+          description: Error type description
+        details:
+          type: array
+          description: Holds list of input validation errors
+          items:
+            $ref: '#/components/schemas/ErrorDetailsItem'
     CopsRequest:
       required:
         - account
@@ -1019,6 +1019,6 @@ components:
         password:
           tokenUrl: 'https://api.naupay.com.com/tokens'
           scopes:
-            'WRITE:COP': Confirmation of payee request
-            'WRITE:FILE': Upload of files
-            'READ:FILE': List files
+            cops: Confirmation of payee request
+            files: Upload of files
+            files_read: List files
