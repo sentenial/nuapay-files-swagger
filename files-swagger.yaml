@@ -526,6 +526,7 @@ components:
             - GBP
             - EUR
         iban:
+          pattern: '[a-zA-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}'
           type: string
         other:
           $ref: '#/components/schemas/Other'
@@ -565,11 +566,10 @@ components:
     Batch:
       required:
         - categoryPurpose
-        - creditor
-        - creditorAccount
+        - debtor
+        - debtorAccount
         - payments
         - requestedExecutionDate
-        - ultimateCreditor
       type: object
       properties:
         batchReference:
@@ -581,87 +581,34 @@ components:
           minimum: 1
           type: integer
           format: int32
-        creditorAccount:
+        debtorAccount:
           $ref: '#/components/schemas/Account'
         requestedExecutionDate:
           type: string
+          description: Requested Execution Date for the credit transfer. In format YYYY-MM-DD
           format: date
-        creditor:
+        debtor:
           $ref: '#/components/schemas/PaymentParty'
-        ultimateCreditor:
+        ultimateDebtor:
           $ref: '#/components/schemas/PaymentParty'
         categoryPurpose:
-          type: string
-          description: |
-            BONU - BonusPayment
-            CASH - CashManagementTransfer
-            CBLK - Card Bulk Clearing
-            CCRD - Credit Card Payment
-            CORT - TradeSettlementPayment
-            DCRD - Debit Card Payment
-            DIVI - Dividend
-            DVPM - DeliverAgainstPayment
-            EPAY - Epayment
-            FCOL - Fee Collection
-            GOVT - GovernmentPayment
-            HEDG - Hedging
-            ICCP - Irrevocable Credit Card Payment
-            IDCP - Irrevocable Debit Card Payment
-            INTC - IntraCompanyPayment
-            INTE - Interest
-            LOAN - Loan
-            MP2B - Commercial
-            MP2P - Consumer
-            OTHR - OtherPayment
-            PENS - PensionPayment
-            RVPM - ReceiveAgainstPayment
-            SALA - SalaryPayment
-            SECU - Securities
-            SSBE - SocialSecurityBenefit
-            SUPP - SupplierPayment
-            TAXS - TaxPayment
-            TRAD - Trade
-            TREA - TreasuryPayment
-            VATX - ValueAddedTaxPayment
-            WHLD - WithHolding
-          enum:
-            - BONU
-            - CASH
-            - CBLK
-            - CCRD
-            - CORT
-            - DCRD
-            - DIVI
-            - DVPM
-            - EPAY
-            - FCOL
-            - GOVT
-            - HEDG
-            - ICCP
-            - IDCP
-            - INTC
-            - INTE
-            - LOAN
-            - MP2B
-            - MP2P
-            - OTHR
-            - PENS
-            - RVPM
-            - SALA
-            - SECU
-            - SSBE
-            - SUPP
-            - TAXS
-            - TRAD
-            - TREA
-            - VATX
-            - WHLD
+          $ref: '#/components/schemas/CategoryPurpose'
         payments:
           maxItems: 10000
           minItems: 1
           type: array
           items:
             $ref: '#/components/schemas/Payment'
+    CategoryPurpose:
+      type: object
+      properties:
+        code:
+          maxLength: 4
+          minLength: 4
+          type: string
+          description: Specifies a high level purpose of the instruction based on a set of predefined ISO 20022 Message Schemas ExternalCategoryPurpose1Code Set - .Cannot be used at the same time as 'Proprietary'
+        propriety:
+          type: string
     FileRequest:
       required:
         - batches
@@ -670,6 +617,8 @@ components:
       type: object
       properties:
         fileReference:
+          maxLength: 35
+          minLength: 1
           type: string
         fileType:
           type: string
@@ -683,12 +632,25 @@ components:
           items:
             $ref: '#/components/schemas/Batch'
     Other:
+      required:
+        - scheme
       type: object
       properties:
         scheme:
           type: string
+          enum:
+            - SortCodeAccountNumber
+            - BBAN
+            - BankCodeBranchCodeAccountNumber
         id:
+          maxLength: 35
+          minLength: 0
           type: string
+        issuer:
+          maxLength: 35
+          minLength: 0
+          type: string
+          description: Other issuer
     Payment:
       required:
         - creditor
@@ -710,80 +672,20 @@ components:
           minLength: 1
           type: string
         categoryPurpose:
-          type: string
-          description: |
-            BONU - BonusPayment
-            CASH - CashManagementTransfer
-            CBLK - Card Bulk Clearing
-            CCRD - Credit Card Payment
-            CORT - TradeSettlementPayment
-            DCRD - Debit Card Payment
-            DIVI - Dividend
-            DVPM - DeliverAgainstPayment
-            EPAY - Epayment
-            FCOL - Fee Collection
-            GOVT - GovernmentPayment
-            HEDG - Hedging
-            ICCP - Irrevocable Credit Card Payment
-            IDCP - Irrevocable Debit Card Payment
-            INTC - IntraCompanyPayment
-            INTE - Interest
-            LOAN - Loan
-            MP2B - Commercial
-            MP2P - Consumer
-            OTHR - OtherPayment
-            PENS - PensionPayment
-            RVPM - ReceiveAgainstPayment
-            SALA - SalaryPayment
-            SECU - Securities
-            SSBE - SocialSecurityBenefit
-            SUPP - SupplierPayment
-            TAXS - TaxPayment
-            TRAD - Trade
-            TREA - TreasuryPayment
-            VATX - ValueAddedTaxPayment
-            WHLD - WithHolding
-          enum:
-            - BONU
-            - CASH
-            - CBLK
-            - CCRD
-            - CORT
-            - DCRD
-            - DIVI
-            - DVPM
-            - EPAY
-            - FCOL
-            - GOVT
-            - HEDG
-            - ICCP
-            - IDCP
-            - INTC
-            - INTE
-            - LOAN
-            - MP2B
-            - MP2P
-            - OTHR
-            - PENS
-            - RVPM
-            - SALA
-            - SECU
-            - SSBE
-            - SUPP
-            - TAXS
-            - TRAD
-            - TREA
-            - VATX
-            - WHLD
+          $ref: '#/components/schemas/CategoryPurpose'
         remittanceInformation:
           $ref: '#/components/schemas/RemittanceInformation'
     PaymentParty:
       type: object
       properties:
         name:
+          maxLength: 70
+          minLength: 1
           type: string
         address:
           $ref: '#/components/schemas/Address'
+        otherIdentification:
+          $ref: '#/components/schemas/Other'
     RemittanceInformation:
       type: object
       properties:
@@ -1012,6 +914,8 @@ components:
         uri:
           type: string
         batchReference:
+          maxLength: 35
+          minLength: 1
           type: string
         totalAmount:
           $ref: '#/components/schemas/Value'
@@ -1030,71 +934,7 @@ components:
         ultimateDebtor:
           $ref: '#/components/schemas/PaymentParty'
         categoryPurpose:
-          type: string
-          description: |
-            BONU - BonusPayment
-            CASH - CashManagementTransfer
-            CBLK - Card Bulk Clearing
-            CCRD - Credit Card Payment
-            CORT - TradeSettlementPayment
-            DCRD - Debit Card Payment
-            DIVI - Dividend
-            DVPM - DeliverAgainstPayment
-            EPAY - Epayment
-            FCOL - Fee Collection
-            GOVT - GovernmentPayment
-            HEDG - Hedging
-            ICCP - Irrevocable Credit Card Payment
-            IDCP - Irrevocable Debit Card Payment
-            INTC - IntraCompanyPayment
-            INTE - Interest
-            LOAN - Loan
-            MP2B - Commercial
-            MP2P - Consumer
-            OTHR - OtherPayment
-            PENS - PensionPayment
-            RVPM - ReceiveAgainstPayment
-            SALA - SalaryPayment
-            SECU - Securities
-            SSBE - SocialSecurityBenefit
-            SUPP - SupplierPayment
-            TAXS - TaxPayment
-            TRAD - Trade
-            TREA - TreasuryPayment
-            VATX - ValueAddedTaxPayment
-            WHLD - WithHolding
-          enum:
-            - BONU
-            - CASH
-            - CBLK
-            - CCRD
-            - CORT
-            - DCRD
-            - DIVI
-            - DVPM
-            - EPAY
-            - FCOL
-            - GOVT
-            - HEDG
-            - ICCP
-            - IDCP
-            - INTC
-            - INTE
-            - LOAN
-            - MP2B
-            - MP2P
-            - OTHR
-            - PENS
-            - RVPM
-            - SALA
-            - SECU
-            - SSBE
-            - SUPP
-            - TAXS
-            - TRAD
-            - TREA
-            - VATX
-            - WHLD
+          $ref: '#/components/schemas/CategoryPurpose'
         batchStatus:
           type: string
           enum:
