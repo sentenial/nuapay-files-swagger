@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
-  title: File Payment Files Upload With Funding API
-  description: Sentenial Payment Files And Funding API
+  title: Payment File Upload API
+  description: Sentenial Payment File Upload API
   version: 1.0.0
 externalDocs:
   url: 'https://developer.nuapay.com'
@@ -718,23 +718,6 @@ components:
           enum:
             - GBP
             - EUR
-    ErrorDetailsItem:
-      type: object
-      description: Holds list of input validation errors
-    ErrorResponse:
-      type: object
-      properties:
-        returnCode:
-          type: string
-          description: Error type code
-        returnDescription:
-          type: string
-          description: Error type description
-        details:
-          type: array
-          description: Holds list of input validation errors
-          items:
-            $ref: '#/components/schemas/ErrorDetailsItem'
     FileResponseEnvelope:
       type: object
       properties:
@@ -789,6 +772,33 @@ components:
           type: string
         batchesDetailsUri:
           type: string
+    ErrorDetailsItem:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+        description:
+          type: string
+          description: Error description
+        field:
+          type: string
+          description: JSON path to request object property the error is related to
+      description: Holds list of input validation errors
+    ErrorResponse:
+      type: object
+      properties:
+        returnCode:
+          type: string
+          description: Error type code
+        returnDescription:
+          type: string
+          description: Error type description
+        details:
+          type: array
+          description: Holds list of input validation errors
+          items:
+            $ref: '#/components/schemas/ErrorDetailsItem'
     CopsRequest:
       required:
         - account
