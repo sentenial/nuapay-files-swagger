@@ -202,7 +202,7 @@ paths:
     get:
       tags:
         - payments-end-point
-      summary: Get the payments in a batch.
+      summary: Get the payment in a batch.
       operationId: payments
       parameters:
         - name: fileId
@@ -253,7 +253,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
       security:
         - oauth:
-            - 'READ:FILE'
+            - files_read
   '/files/{fileId}/batches/{batchId}/payments':
     get:
       tags:
@@ -312,7 +312,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
       security:
         - oauth:
-            - 'READ:FILE'
+            - files_read
   '/files/{fileId}/batches/{batchId}':
     get:
       tags:
