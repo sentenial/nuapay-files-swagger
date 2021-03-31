@@ -376,7 +376,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: batchStatuses
+        - name: batchstatuses
           in: query
           required: false
           schema:
@@ -718,6 +718,33 @@ components:
           enum:
             - GBP
             - EUR
+    ErrorDetailsItem:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+        description:
+          type: string
+          description: Error description
+        field:
+          type: string
+          description: JSON path to request object property the error is related to
+      description: Holds list of input validation errors
+    ErrorResponse:
+      type: object
+      properties:
+        returnCode:
+          type: string
+          description: Error type code
+        returnDescription:
+          type: string
+          description: Error type description
+        details:
+          type: array
+          description: Holds list of input validation errors
+          items:
+            $ref: '#/components/schemas/ErrorDetailsItem'
     FileResponseEnvelope:
       type: object
       properties:
@@ -772,33 +799,6 @@ components:
           type: string
         batchesDetailsUri:
           type: string
-    ErrorDetailsItem:
-      type: object
-      properties:
-        code:
-          type: string
-          description: Error code
-        description:
-          type: string
-          description: Error description
-        field:
-          type: string
-          description: JSON path to request object property the error is related to
-      description: Holds list of input validation errors
-    ErrorResponse:
-      type: object
-      properties:
-        returnCode:
-          type: string
-          description: Error type code
-        returnDescription:
-          type: string
-          description: Error type description
-        details:
-          type: array
-          description: Holds list of input validation errors
-          items:
-            $ref: '#/components/schemas/ErrorDetailsItem'
     CopsRequest:
       required:
         - account
