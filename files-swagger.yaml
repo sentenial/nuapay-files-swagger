@@ -1,785 +1,1627 @@
 openapi: 3.0.1
 info:
-  title: Payment File Upload API
-  description: Sentenial Payment File Upload API
+  title: Nuapay Files Service API Specification
+  description: Swagger Specification for the Files Management Service
+  contact:
+    name: Nuapay
+    email: api.support@nuapay.com
+  license:
+    name: Nuapay
+    url: https://sentenial.com
   version: 1.0.0
-externalDocs:
-  url: 'https://developer.nuapay.com'
+  x-logo:
+    backgroundColor: '#FFFFFF'
+    url: https://www.nuapay.com/wp-content/uploads/2018/04/nuapay.svg
 servers:
-  - url: 'https://sentenial.com'
-    variables: {}
+  - url: https://api.nuapay.com/cust
+tags:
+  - name: Files Management Service
+    description: |
+      This service provides methods for Files management including:
+        * Uploading File
+        * Listing Files 
+        * Retrieving File Details
+        * Listing File Batches
+        * Retrieving File Batch Details
+        * Listing File Batch Transactions
+          * `Note`: Transaction resource represent requested Direct Debit or Credit Transfer Transaction. The Transaction object elements may or may not have a value depending if that value is available for the given transaction type.
+          * `Note`: Transaction object contains two statuses. `Processing Status`  informs about status of processing of Transaction and not actual payment (Direct Debit/Credit Transfer.) To understand the execution status of the payments use `Transaction Status`
+          * `Note`: Each Transaction that has `COMPLETE` processing status contains link to actual Payment (Direct Debit/ Credit Transfer created).
+
 paths:
   /files:
-    get:
-      tags:
-        - files-end-point
-      summary: Get Files
-      operationId: getFiles
-      parameters:
-        - name: fromdatetime
-          in: query
-          required: false
-          schema:
-            type: string
-            description: 'Submission from date time in the format, yyyy-MM-ddTHH:mm:ss'
-        - name: todatetime
-          in: query
-          required: false
-          schema:
-            type: string
-            description: 'Submission to date time in the format, yyyy-MM-ddTHH:mm:ss'
-        - name: fileStatuses
-          in: query
-          required: false
-          schema:
-            type: array
-            description: A number of statuses can be queried within a single request by providing multiple occurrences of the parameter. If not provided all statuses will be returned
-            items:
-              type: string
-              description: A number of statuses can be queried within a single request by providing multiple occurrences of the parameter. If not provided all statuses will be returned
-              enum:
-                - QUEUED
-                - PARTIALLY_REVOKED
-                - CANCELLED
-                - APPROVAL_REJECTED
-                - COMPLETE
-                - COMPLETE_WITH_ERRORS
-                - REJECTED
-                - ACCEPTED
-                - IN_PROGRESS
-                - REVOKED
-                - RETURNED
-                - PARTIALLY_ACCEPTED
-                - APPROVAL_PENDING
-        - name: filereference
-          in: query
-          required: false
-          schema:
-            type: string
-            description: File reference
-        - name: pagenumber
-          in: query
-          description: default page is 1
-          required: false
-          schema:
-            minimum: 1
-            type: integer
-            format: int32
-        - name: pagesize
-          in: query
-          description: default pagesize is 20
-          required: false
-          schema:
-            maximum: 100
-            type: integer
-            format: int32
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FilesResponseEnvelope'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '405':
-          description: Method Not Allowed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      security:
-        - oauth:
-            - files_read
     post:
       tags:
-        - files-end-point
-      summary: Payment Files Upload Service
-      operationId: files
+        - Files
+      summary: Upload file
+      description: POST request used to upload a file. A request must contain the
+        multipart/form-data content type with a json part containing input parameters
+        in a JSON structure and a file part with file content.
+      operationId: uploadFileUsingPOST
+      parameters:
+        - name: JWS-Signature
+          in: header
+          description: JWS-Signature
+          schema:
+            type: string
+        - name: JWS-File-Signature
+          in: header
+          description: JWS-File-Signature
+          schema:
+            type: string            
+        - name: Idempotency-Key
+          in: header
+          description: Every request will be processed only once per Idempotency-Key. The
+            Idempotency Key will be valid for 24 hours.
+          schema:
+            maxLength: 50
+            type: string
+        - name: json
+          in: query
+          description: json
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: '#/components/schemas/FileRequest'
+              required:
+                - file
+              type: object
+              properties:
+                file:
+                  type: string
+                  description: file
+                  format: binary
         required: true
       responses:
-        '201':
+        201:
           description: Created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/FileResponseEnvelope'
-        '400':
+              example:
+                data:
+                  id: 8b5g56e82r
+                  uri: /files/8b5g56e82r
+                  status: QUEUED
+                  fileType: DIRECT_DEBIT
+                  filegenerationtype: IMPORT
+                  rejectionDetails: null
+                  newFileName: DD_GB30000SDDSELN00000031394541WPAY_CORE_GX_9nf_P812_Pain.008.001.02_2tx.xml.QUEUED
+                  originalFileName: Pain.008.001.02_2tx.xml
+                  creationDateTime: 2023-05-02T08:04:42.804Z
+                  completionDateTime: null
+                  numberOfBatches: null
+                  numberOfTransactions: null
+                  numberOfUnpaids: null
+                  totalAmount: null
+                  links: []
+        400:
           description: Bad request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '401':
+              example:
+                returnCode: FRS0002
+                returnDescription: Max file size exceeded.
+        401:
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '403':
+              example: {}
+        403:
           description: Forbidden
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '405':
+              example:
+                returnCode: FRSXXXX
+                returnDescription: JWS-Signature is invalid.
+        405:
           description: Method Not Allowed
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example: {}
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: {}
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: FRS0006
+                returnDescription: Not allowed file format
+        429:
+          description: Too Many Requests
+          headers:
+            X-Rate-Limit-Reset:
+              description: Number in seconds to wait before retrying request.
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-sentenial:
+        internal: false
+        products: [ direct-debits, credit-transfers ]
+        service: files-service
       security:
-        - oauth:
-            - files
-  /cops:
-    post:
-      tags:
-        - cops-endpoint
-      summary: Confirmation Of Payee Service.
-      operationId: badBoysWhatYeGonnaDo
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CopsRequest'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CopsResponseEnvelope'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '405':
-          description: Method Not Allowed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      security:
-        - oauth:
-            - cops
-  '/files/{fileId}/batches/{batchId}/payments/{paymentId}':
+        - MerchantOAuth2:
+            - directdebits_files
+            - credittransfers_files
+        - MerchantApiKey: []
     get:
       tags:
-        - payments-end-point
-      summary: Get the payment in a batch.
-      operationId: payments
+        - Files
+      summary: Get all files matching filters for requesting Organization
+      description: Get all files matching filters for requesting Organization
+      operationId: listFilesUsingGET
       parameters:
-        - name: fileId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: batchId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: paymentId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaymentResponseEnvelope'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '405':
-          description: Method Not Allowed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      security:
-        - oauth:
-            - files_read
-  '/files/{fileId}/batches/{batchId}/payments':
-    get:
-      tags:
-        - payments-end-point
-      summary: Get the payments in a batch.
-      operationId: paymentsWithQueryStatus
-      parameters:
-        - name: fileId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: batchId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: paymentstatus
+        - name: status
           in: query
-          required: true
-          schema:
-            type: string
-            enum:
-              - COMPETE
-              - REJECTED
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaymentsResponseEnvelope'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '405':
-          description: Method Not Allowed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      security:
-        - oauth:
-            - files_read
-  '/files/{fileId}/batches/{batchId}':
-    get:
-      tags:
-        - batches-end-point
-      summary: Get Details of an individual batch in a file
-      operationId: getFile
-      parameters:
-        - name: fileId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: batchId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BatchSummary'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '405':
-          description: Method Not Allowed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      security:
-        - oauth:
-            - files_read
-  '/files/{fileId}/batches':
-    get:
-      tags:
-        - batches-end-point
-      summary: Get Batches For A File
-      operationId: getFile_1
-      parameters:
-        - name: fileId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: batchstatuses
-          in: query
+          description: File status.
           required: false
           schema:
             type: array
-            description: A number of statuses can be queried within a single request by providing multiple occurrences of the parameter. If not provided all statuses will be returned
             items:
               type: string
-              description: A number of statuses can be queried within a single request by providing multiple occurrences of the parameter. If not provided all statuses will be returned
               enum:
-                - CANCELLED
-                - APPROVAL_REJECTED
-                - COMPLETE_WITH_ERRORS
-                - REJECTED
-                - IN_PROGRESS
-                - ACCEPTED
-                - COMPLETE
-                - RETURNED
-                - PARTIALLY_ACCEPTED
+                - QUEUED
                 - APPROVAL_PENDING
-        - name: creditorname
+                - APPROVAL_REJECTED
+                - ACCEPTED
+                - PARTIALLY_ACCEPTED
+                - COMPLETE
+                - COMPLETE_WITH_ERRORS
+                - IN_PROGRESS
+                - REJECTED
+                - REVOKED
+                - PARTIALLY_REVOKED
+                - PENDING
+                - PENDING_SETTLEMENT
+        - name: creationdatefrom
           in: query
+          description: Creation date filter lower boundary.
           required: false
           schema:
             type: string
-            description: Creditor name. This parameter supports searching with wildcards
-        - name: creditoraccountidentication
+            format: date
+        - name: creationdateto
           in: query
+          description: Creation date filter upper boundary.
           required: false
           schema:
             type: string
-            description: creditor account identification.
-        - name: scheme
+            format: date
+        - name: filename
           in: query
+          description: File name filter.
           required: false
           schema:
             type: string
-            description: originator account scheme.
-        - name: batchreference
+        - name: filetype
           in: query
+          description: File type.
           required: false
           schema:
-            type: string
-            description: Batch reference
+            type: array
+            items:
+              type: string
+              enum:
+                - DIRECT_DEBIT
+                - CREDIT_TRANSFER
+        - name: filegenerationtype
+          in: query
+          description: File generation type.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - IMPORT
+                - EXPORT
         - name: pagenumber
           in: query
-          description: default page is 1
+          description: 'Holds page number to be returned. Default: 1.'
           required: false
           schema:
-            minimum: 1
             type: integer
             format: int32
+            default: 1
         - name: pagesize
           in: query
-          description: default pagesize is 20
-          required: false
+          description: 'Holds page size to be returned. Default: 20. Maxsize Default: 100.'
           schema:
-            maximum: 100
             type: integer
             format: int32
+            default: 20
       responses:
-        '200':
+        200:
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BatchesResponseEnvelope'
-        '401':
+                $ref: '#/components/schemas/FilesListResponseEnvelope'
+              example:
+                uri: /files
+                data:
+                  -
+                    id: j29pwvl5bx
+                    uri: /files/j29pwvl5bx
+                    creationDateTime: 2023-05-10T21:17:59.000Z
+                    completionDateTime: 2023-05-10T21:19:29.000Z
+                    status: REJECTED
+                    fileType: DIRECT_DEBIT
+                    filegenerationtype: IMPORT
+                    rejectionReason:
+                      rejectionReason: ERR001
+                      rejectionDescription: AllTransactionsRejected
+                      rejectionDateTime: 2023-09-29T12:02:39.432Z
+                    newFileName: DD_GB30000SDDSELN00000031394541WPAY_CORE_GX_xOu_P818_Pain.008.001.08_2txs.xml.SCANNED
+                    originalFileName: Pain.008.001.08_2txs.xml
+                    numberOfBatches: 1
+                    numberOfTransactions: 2
+                    numberOfUnpaids: 0
+                    totalAmount: 2
+                    links:
+                      -
+                        id: abxq98pn2l
+                        resourceType: file
+                        uri: /files/j29pwvl5bx
+                      -
+                        id: null
+                        resourceType: batch
+                        uri: /files/j29pwvl5bx/batches
+                page:
+                  pageNumber: 1
+                  pageSize: 20
+                  totalElements: 1
+                  totalPages: 1
+                sort: []
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: FRS0000
+                returnDescription: Validation errors occurred. Please see details.
+                details:
+                  code: FRS0006
+                  description: Field is invalid.
+                  field: pageSize
+        401:
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '403':
+        403:
           description: Forbidden
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '405':
+        405:
           description: Method Not Allowed
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: ONBS0000
+                returnDescription: Validation errors occurred. Please see details.
+                details:
+                  code: ONBS0008
+                  description: Max Page size is exceeded.
+                  field: pageSize
+        429:
+          description: Too Many Requests
+          headers:
+            X-Rate-Limit-Reset:
+              description: Number in seconds to wait before retrying request.
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-sentenial:
+        internal: false
+        products: [ direct-debits, credit-transfers ]
+        service: files-service
       security:
-        - oauth:
-            - files_read
-  '/files/{fileId}':
+        - MerchantOAuth2:
+            - directdebits_files
+            - directdebits_files_read
+            - credittransfers_files
+            - credittransfers_files_read
+        - MerchantApiKey: []
+  /files/{fileId}:
     get:
       tags:
-        - files-end-point
-      summary: Get a particular File by its id
-      operationId: getFile_2
+        - Files
+      summary: Get detailed information on a File.
+      description: Get detailed information on File with a given ID.
+      operationId: retrieveFileDetailsUsingGET
       parameters:
         - name: fileId
-          in: path
           required: true
+          in: path
+          description: Encoded File ID.
           schema:
             type: string
+        - name: Idempotency-Key
+          in: header
+          description: Every request will be processed only once per Idempotency-Key.  The
+            Idempotency Key will be valid for 24 hours.
+          schema:
+            maxLength: 50
+            type: string
       responses:
-        '200':
+        200:
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/FileResponseEnvelope'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+              example:
+                data:
+                  id: j29pwvl5bx
+                  uri: /files/j29pwvl5bx
+                  creationDateTime: 2023-05-10T21:17:59.000Z
+                  completionDateTime: 2023-05-10T21:19:29.000Z
+                  status: REJECTED
+                  fileType: DIRECT_DEBIT
+                  filegenerationtype: IMPORT
+                  rejectionReason:
+                    rejectionReason: ERR001
+                    rejectionDescription: AllTransactionsRejected
+                    rejectionDateTime: 2023-05-10T21:19:29.000Z
+                  newFileName: DD_GB30000SDDSELN00000031394541WPAY_CORE_GX_xOu_P818_Pain.008.001.08_2txs.xml.SCANNED
+                  originalFileName: Pain.008.001.08_2txs.xml
+                  numberOfBatches: 1
+                  numberOfTransactions: 2
+                  numberOfUnpaids: 0
+                  totalAmount: 2
+                  links:
+                    -
+                      id: abxq98pn2l
+                      resourceType: file
+                      uri: /files/j29pwvl5bx
+                    -
+                      id: null
+                      resourceType: batch
+                      uri: /files/j29pwvl5bx/batches
+        404:
           description: Not Found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '405':
+              example:
+                returnCode: FRS0000
+                returnDescription: Resource not found.
+                details:
+                  code: FRS00000
+                  description: Not found.
+                  field: null
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        405:
           description: Method Not Allowed
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        429:
+          description: Too Many Requests
+          headers:
+            X-Rate-Limit-Reset:
+              description: Number in seconds to wait before retrying request.
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-sentenial:
+        internal: false
+        products: [ direct-debits, credit-transfers ]
+        service: files-service
       security:
-        - oauth:
-            - files_read
+        - MerchantOAuth2:
+            - directdebits_files
+            - directdebits_files_read
+            - credittransfers_files
+            - credittransfers_files_read
+        - MerchantApiKey: []
+  /files/{fileId}/batches:
+    get:
+      tags:
+        - Files
+      summary: Get all Batches associated with a File and matching filters.
+      description: Lists all available Batches for File with provided ID.
+      operationId: listBatchesUsingGET
+      parameters:
+        - name: fileId
+          required: true
+          in: path
+          description: Encoded File ID.
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Batch status.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - COMPLETE
+                - COMPLETE_WITH_ERRORS
+                - DUE
+                - IN_PROGRESS
+                - REJECTED
+                - REVOKED
+                - SETTLED
+                - PENDING
+                - PENDING_SETTLEMENT
+                - RECALLED
+        - name: creationdatefrom
+          in: query
+          description: Creation date filter lower boundary.
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: creationdateto
+          in: query
+          description: Creation date filter upper boundary.
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: requestedduedatefrom
+          in: query
+          description: Requested Due date filter lower boundary.
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: requestedduedateto
+          in: query
+          description: Requested Due date filter upper boundary.
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: filename
+          in: query
+          description: File name filter.
+          required: false
+          schema:
+            type: string
+        - name: batchtype
+          in: query
+          description: Batch type.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - EXPORT
+                - IMPORT
+        - name: batchreference
+          in: query
+          description: Batch Reference.
+          required: false
+          schema:
+            type: string
+        - name: pagenumber
+          in: query
+          description: 'Holds page number to be returned. Default: 1.'
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: pagesize
+          in: query
+          description: 'Holds page size to be returned. Default: 20. Maxsize Default: 100.'
+          schema:
+            type: integer
+            format: int32
+            default: 20
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchesListResponseEnvelope'
+              example:
+                uri: /files/abxq98pn2l/batches
+                data:
+                  -
+                    id: w24y5qgv2p
+                    uri: /files/j29pwvl5bx/batches/w24y5qgv2p
+                    batchReference: CRCUR09052023IE98ULSB98644073416-5
+                    status: REJECTED
+                    creationDateTime: 2023-05-10T21:19:29.000Z
+                    dueDate: 2023-05-09
+                    numberOfTransactions: 2
+                    rejectionReason:
+                      rejectionReason: ERR001
+                      rejectionDescription: AllTransactionsRejected
+                      rejectionDateTime: 2023-05-10T21:19:29.000Z
+                    links:
+                      -
+                        id: null
+                        resourceType: transactions
+                        uri: /files/j29pwvl5bx/batches/w24y5qgv2p/transactions
+                page:
+                  pageNumber: 1,
+                  pageSize: 20,
+                  totalElements: 1,
+                  totalPages: 1
+                sort: [ ]
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: ONBS0000
+                returnDescription: Validation errors occurred. Please see details.
+                details:
+                  code: ONBS0006
+                  description: Field is invalid.
+                  field: pageSize
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: FRS0000
+                returnDescription: Resource not found.
+                details:
+                  code: FRS00000
+                  description: Not found.
+                  field: null
+        405:
+          description: Method Not Allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: FRS0000
+                returnDescription: Validation errors occurred. Please see details.
+                details:
+                  code: FRS0008
+                  description: Max Page size is exceeded.
+                  field: pageSize
+        429:
+          description: Too Many Requests
+          headers:
+            X-Rate-Limit-Reset:
+              description: Number in seconds to wait before retrying request.
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-sentenial:
+        internal: false
+        products: [ direct-debits, credit-transfers ]
+        service: files-service
+      security:
+        - MerchantOAuth2:
+            - directdebits_files
+            - directdebits_files_read
+            - credittransfers_files
+            - credittransfers_files_read
+        - MerchantApiKey: []
+  /files/{fileId}/batches/{batchId}:
+    get:
+      tags:
+        - Files
+      summary: Get detailed information on a Batch.
+      description: Get detailed information on Batch with a given ID.
+      operationId: retrieveBatchDetailsUsingGET
+      parameters:
+        - name: fileId
+          required: true
+          in: path
+          description: Encoded File ID.
+          schema:
+            type: string
+        - name: batchId
+          required: true
+          in: path
+          description: Encoded Batch ID.
+          schema:
+            type: string
+        - name: Idempotency-Key
+          in: header
+          description: Every request will be processed only once per Idempotency-Key.  The
+            Idempotency Key will be valid for 24 hours.
+          schema:
+            maxLength: 50
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchDetailsResponseEnvelope'
+              example:
+                data:
+                  id: w24y5qgv2p
+                  uri: /files/j29pwvl5bx/batches/w24y5qgv2p
+                  batchReference: CRCUR09052023IE98ULSB98644073416-5
+                  status: REJECTED
+                  creationDateTime: 2023-05-10T21:19:29.000Z
+                  dueDate: 2023-05-09
+                  numberOfTransactions: 2
+                  rejectionReason:
+                    rejectionReason: ERR001
+                    rejectionDescription: AllTransactionsRejected
+                    rejectionDateTime: 2023-05-10T21:19:29.000Z
+                  links:
+                    -
+                      id: null
+                      resourceType: transactions
+                      uri: /files/j29pwvl5bx/batches/w24y5qgv2p/transactions
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: FRS0000
+                returnDescription: Resource not found.
+                details:
+                  code: FRS00000
+                  description: Not found.
+                  field: null
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        405:
+          description: Method Not Allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        429:
+          description: Too Many Requests
+          headers:
+            X-Rate-Limit-Reset:
+              description: Number in seconds to wait before retrying request.
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-sentenial:
+        internal: false
+        products: [ direct-debits, credit-transfers ]
+        service: files-service
+      security:
+        - MerchantOAuth2:
+            - directdebits_files
+            - directdebits_files_read
+            - credittransfers_files
+            - credittransfers_files_read
+        - MerchantApiKey: []
+  /files/{fileId}/batches/{batchId}/transactions:
+    get:
+      tags:
+        - Files
+      summary: Get all transactions (Credit Transfers/Direct Debits) in a specified Batch associated with a specified File and matching filters.
+      description: Lists Transactions for Batch in a File.
+      operationId: listTransactionsForBatchUsingGET
+      parameters:
+        - name: fileId
+          in: path
+          description:  File ID.
+          required: true
+          schema:
+            type: string
+        - name: batchId
+          in: path
+          description:  Batch ID.
+          required: true
+          schema:
+            type: string
+        - name: Idempotency-Key
+          in: header
+          description: Every request will be processed only once per Idempotency-Key.  The
+            Idempotency Key will be valid for 24 hours.
+          schema:
+            maxLength: 50
+            type: string
+        - name: processingstatus
+          in: query
+          description: Processing Status
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - COMPLETE
+                - REJECTED
+                - PENDING
+        - name: transactionstatus
+          in: query
+          description: Transaction Status
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - ACCEPTED
+                - READY_FOR_EXPORT
+                - RECALLED
+                - EXPORTED
+                - REJECTED
+                - PENDING
+                - PENDING_SETTLEMENT
+                - CANCELLED
+                - REFUNDED
+                - REFUSED
+                - RETURNED
+                - REVOKED
+                - REPRESENTED
+                - REVERSED
+        - name: requestedexecutiondatefrom
+          in: query
+          description: Execution date filter lower boundary.
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: requestedexecutiondateto
+          in: query
+          description: Execution date filter upper boundary.
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: counterpartyname
+          in: query
+          description: Beneficiary name (CT). Debtor name (DD)
+          required: false
+          schema:
+            type: string
+        - name: counterpartydomesticaccountnumber
+          in: query
+          description: Beneficiary(CT)/Debtor (DD) Domestic Account Number.
+          required: false
+          schema:
+            type: string
+        - name: counterpartyiban
+          in: query
+          description: Beneficiary(CT)/Debtor (DD) Domestic IBAN.
+          required: false
+          schema:
+            type: string
+        - name: endtoendid
+          in: query
+          description: Payment End-to-end ID.
+          required: false
+          schema:
+            type: string
+        - name: sepamandateid
+          in: query
+          description: Mandate reference.
+          required: false
+          schema:
+            type: string
+        - name: pagenumber
+          in: query
+          description: 'Holds page number to be returned. Default: 1.'
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: pagesize
+          in: query
+          description: 'Holds page size to be returned. Default: 20. Maxsize Default: 100.'
+          schema:
+            type: integer
+            format: int32
+            default: 20
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionsListResponseEnvelope'
+              example:
+                data:
+                  -
+                    id: j934dccsa
+                    uri: /files/j29pwvl5bx/batches/w24y5qgv2p/transactions/8b5gl8682r
+                    counterpartyName: Worldpay
+                    ultimateCounterpartyName: null
+                    counterpartyIBAN: null
+                    endToEndId: BjxcuNJ1w9fWUo8M6eaWUT0u0vKiRlmR
+                    requestedExecutionDate: 2023-09-07
+                    amount: 1
+                    currency: EUR
+                    transactionStatus: REJECTED
+                    processingStatus: REJECTED
+                    rejectionDetails:
+                      rejectionReason: DD023
+                      rejectionDescription: null
+                      rejectionDateTime: 2023-05-10T21:19:29.000Z
+                    links: [ ]
+                  -
+                    id: p2lqx9eamv
+                    uri: /files/j29pwvl5bx/batches/w24y5qgv2p/transactions/p2lqx9eamv
+                    counterpartyName: Worldpay
+                    ultimateCounterpartyName: null
+                    counterpartyIBAN: null
+                    endToEndId: FK3LXAr1rOW4Qn2RWyR9Rwx11AL8rCUV
+                    requestedExecutionDate: 2023-09-07
+                    amount: 1
+                    currency: EUR
+                    transactionStatus: REJECTED
+                    processingStatus: REJECTED
+                    rejectionDetails:
+                      rejectionReason: DD023
+                      rejectionDescription: null
+                      rejectionDateTime: 2023-05-10T21:19:29.000Z
+                    links: [ ]
+                page:
+                  pageNumber: 1
+                  pageSize: 20
+                  totalElements: 2
+                  totalPages: 1
+                sort: [ ]
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: ONBS0000
+                returnDescription: Validation errors occurred. Please see details.
+                details:
+                  code: ONBS0006
+                  description: Field is invalid.
+                  field: pageSize
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: FRS0000
+                returnDescription: Resource not found.
+                details:
+                  code: FRS00000
+                  description: Not found.
+                  field: null
+        405:
+          description: Method Not Allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: FRS0000
+                returnDescription: Validation errors occurred. Please see details.
+                details:
+                  code: FRS0008
+                  description: Max Page size is exceeded.
+                  field: pageSize
+        429:
+          description: Too Many Requests
+          headers:
+            X-Rate-Limit-Reset:
+              description: Number in seconds to wait before retrying request.
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-sentenial:
+            enriched: true
+      x-sentenial:
+        internal: false
+        products: [ direct-debits, credit-transfers ]
+        service: files-service
+      security:
+        - MerchantOAuth2:
+            - credittransfers_files
+            - directdebits_files
+            - credittransfers_files_read
+            - directdebits_files_read
+        - MerchantApiKey: []
+  /files/{fileId}/transactions:
+    get:
+      tags:
+        - Files
+      summary: Get all transactions (Credit Transfers/Direct Debits) in a specified File and matching filters.
+      description: Lists Transactions for a File.
+      operationId: listTransactionsForFileUsingGET
+      parameters:
+        - name: fileId
+          in: path
+          description:  File ID.
+          required: true
+          schema:
+            type: string
+        - name: Idempotency-Key
+          in: header
+          description: Every request will be processed only once per Idempotency-Key.  The
+            Idempotency Key will be valid for 24 hours.
+          schema:
+            maxLength: 50
+            type: string
+        - name: processingstatus
+          in: query
+          description: Processing Status
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - COMPLETE
+                - REJECTED
+                - PENDING
+        - name: transactionstatus
+          in: query
+          description: Transaction Status
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - ACCEPTED
+                - READY_FOR_EXPORT
+                - RECALLED
+                - EXPORTED
+                - REJECTED
+                - PENDING
+                - PENDING_SETTLEMENT
+                - CANCELLED
+                - REFUNDED
+                - REFUSED
+                - RETURNED
+                - REVOKED
+                - REPRESENTED
+                - REVERSED
+        - name: requestedexecutiondatefrom
+          in: query
+          description: Execution date filter lower boundary.
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: requestedexecutiondateto
+          in: query
+          description: Execution date filter upper boundary.
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: counterpartyname
+          in: query
+          description: Beneficiary name (CT). Debtor name (DD)
+          required: false
+          schema:
+            type: string
+        - name: counterpartydomesticaccountnumber
+          in: query
+          description: Beneficiary(CT)/Debtor (DD) Domestic Account Number.
+          required: false
+          schema:
+            type: string
+        - name: counterpartyiban
+          in: query
+          description: Beneficiary(CT)/Debtor (DD) Domestic IBAN.
+          required: false
+          schema:
+            type: string
+        - name: endtoendid
+          in: query
+          description: Payment End-to-end ID.
+          required: false
+          schema:
+            type: string
+        - name: sepamandateid
+          in: query
+          description: Mandate reference.
+          required: false
+          schema:
+            type: string
+        - name: pagenumber
+          in: query
+          description: 'Holds page number to be returned. Default: 1.'
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: pagesize
+          in: query
+          description: 'Holds page size to be returned. Default: 20. Maxsize Default: 100.'
+          schema:
+            type: integer
+            format: int32
+            default: 20
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionsListResponseEnvelope'
+              example:
+                data:
+                  -
+                    id: j934dccsa
+                    uri: /files/j29pwvl5bx/batches/w24y5qgv2p/transactions/8b5gl8682r
+                    counterpartyName: Worldpay
+                    ultimateCounterpartyName: null
+                    counterpartyIBAN: null
+                    endToEndId: BjxcuNJ1w9fWUo8M6eaWUT0u0vKiRlmR
+                    requestedExecutionDate: 2023-09-07
+                    amount: 1
+                    currency: EUR
+                    transactionStatus: REJECTED
+                    processingStatus: REJECTED
+                    rejectionDetails:
+                      rejectionReason: DD023
+                      rejectionDescription: null
+                      rejectionDateTime: 2023-05-10T21:19:29.000Z
+                    links: [ ]
+                  -
+                    id: p2lqx9eamv
+                    uri: /files/j29pwvl5bx/batches/w24y5qgv2p/transactions/p2lqx9eamv
+                    counterpartyName: Worldpay
+                    ultimateCounterpartyName: null
+                    counterpartyIBAN: null
+                    endToEndId: FK3LXAr1rOW4Qn2RWyR9Rwx11AL8rCUV
+                    requestedExecutionDate: 2023-09-07
+                    amount: 1
+                    currency: EUR
+                    transactionStatus: REJECTED
+                    processingStatus: REJECTED
+                    rejectionDetails:
+                      rejectionReason: DD023
+                      rejectionDescription: null
+                      rejectionDateTime: 2023-05-10T21:19:29.000Z
+                    links: [ ]
+                page:
+                  pageNumber: 1
+                  pageSize: 20
+                  totalElements: 2
+                  totalPages: 1
+                sort: [ ]
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: ONBS0000
+                returnDescription: Validation errors occurred. Please see details.
+                details:
+                  code: ONBS0006
+                  description: Field is invalid.
+                  field: pageSize
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: FRS0000
+                returnDescription: Resource not found.
+                details:
+                  code: FRS00000
+                  description: Not found.
+                  field: null
+        405:
+          description: Method Not Allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                returnCode: FRS0000
+                returnDescription: Validation errors occurred. Please see details.
+                details:
+                  code: FRS0008
+                  description: Max Page size is exceeded.
+                  field: pageSize
+        429:
+          description: Too Many Requests
+          headers:
+            X-Rate-Limit-Reset:
+              description: Number in seconds to wait before retrying request.
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-sentenial:
+            enriched: true
+      x-sentenial:
+        internal: false
+        products: [ direct-debits, credit-transfers ]
+        service: files-service
+      security:
+        - MerchantOAuth2:
+            - credittransfers_files
+            - directdebits_files
+            - credittransfers_files_read
+            - directdebits_files_read
+        - MerchantApiKey: []
 components:
   schemas:
-    Account:
-      required:
-        - name
+    RestResponseLink:
       type: object
       properties:
-        name:
-          maxLength: 70
-          minLength: 1
-          type: string
-        iban:
-          pattern: '[a-zA-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}'
-          type: string
-        other:
-          $ref: '#/components/schemas/Other'
-    Address:
-      type: object
-      properties:
-        country:
-          maxLength: 2
-          minLength: 2
-          type: string
-          description: ISO3166-1 alpha-2 country code
-        line1:
-          maxLength: 70
-          minLength: 0
-          type: string
-          description: Address Line 1
-        line2:
-          maxLength: 70
-          minLength: 0
-          type: string
-          description: Address Line 2
-        line3:
-          maxLength: 70
-          minLength: 0
-          type: string
-          description: Address Line 3
-        town:
-          maxLength: 70
-          minLength: 0
-          type: string
-          description: Address Line 3
-        postCode:
-          maxLength: 16
-          minLength: 0
-          type: string
-          description: Postal Code
-    Batch:
-      required:
-        - debtor
-        - debtorAccount
-        - payments
-        - requestedExecutionDate
-      type: object
-      properties:
-        batchReference:
-          maxLength: 35
-          minLength: 1
-          type: string
-        totalAmount:
-          $ref: '#/components/schemas/Value'
-        totalPayments:
-          maximum: 1000
-          minimum: 1
-          type: integer
-          format: int32
-        debtorAccount:
-          $ref: '#/components/schemas/Account'
-        requestedExecutionDate:
-          type: string
-          description: Requested Execution Date for the credit transfer. In format YYYY-MM-DD
-          format: date
-        debtor:
-          $ref: '#/components/schemas/PaymentParty'
-        ultimateDebtor:
-          $ref: '#/components/schemas/PaymentParty'
-        categoryPurpose:
-          $ref: '#/components/schemas/CategoryPurpose'
-        payments:
-          maxItems: 10000
-          minItems: 1
-          type: array
-          items:
-            $ref: '#/components/schemas/Payment'
-    CategoryPurpose:
-      type: object
-      properties:
-        code:
-          maxLength: 4
-          minLength: 4
-          type: string
-          description: Specifies a high level purpose of the instruction based on a set of predefined ISO 20022 Message Schemas ExternalCategoryPurpose1Code Set - .Cannot be used at the same time as 'Proprietary'
-        propriety:
-          type: string
-      description: The system uses the value in the Category Purpose processing option to determine the instruction priority. If specified at the batch level you cannot set it at the payment level.
-    FileRequest:
-      required:
-        - batches
-        - fileReference
-        - fileType
-      type: object
-      properties:
-        fileReference:
-          maxLength: 35
-          minLength: 1
-          type: string
-        fileType:
-          type: string
-          default: CREDIT_TRANSFER
-          enum:
-            - CREDIT_TRANSFER
-        batches:
-          maxItems: 100
-          minItems: 1
-          type: array
-          items:
-            $ref: '#/components/schemas/Batch'
-    Other:
-      required:
-        - id
-        - scheme
-      type: object
-      properties:
-        scheme:
-          type: string
         id:
-          maxLength: 35
-          minLength: 0
           type: string
-        issuer:
-          maxLength: 35
-          minLength: 0
+          description: 'Encoded Id of linked resource'
+        resourceType:
           type: string
-          description: Other issuer
-    Payment:
-      required:
-        - creditor
-        - creditorAccount
-        - endToEndIdentification
-        - instructedAmount
+          description: Resource Type
+        uri:
+          type: string
+          description: Resource URI
+    FilesListResponseEnvelope:
       type: object
       properties:
-        instructedAmount:
-          $ref: '#/components/schemas/Value'
-        creditor:
-          $ref: '#/components/schemas/PaymentParty'
-        creditorAccount:
-          $ref: '#/components/schemas/Account'
-        ultimateCreditor:
-          $ref: '#/components/schemas/PaymentParty'
-        endToEndIdentification:
-          maxLength: 35
-          minLength: 1
+        uri:
           type: string
-          description: globally unique id for the payment
-        categoryPurpose:
-          $ref: '#/components/schemas/CategoryPurpose'
-        remittanceInformation:
-          $ref: '#/components/schemas/RemittanceInformation'
-    PaymentParty:
-      required:
-        - name
-      type: object
-      properties:
-        name:
-          maxLength: 70
-          minLength: 1
-          type: string
-        address:
-          $ref: '#/components/schemas/Address'
-        otherIdentification:
-          $ref: '#/components/schemas/Other'
-    RemittanceInformation:
-      type: object
-      properties:
-        reference:
-          maxLength: 35
-          minLength: 1
-          type: string
-          description: 'Unique reference, as assigned by the debtor, to unambiguously refer to the payment transaction. Usage: If available, the initiating party should provide this reference in the structured remittance information, to enable reconciliation by the creditor upon receipt of the amount of money. If the business context requires the use of a creditor reference or a payment remit identification, and only one identifier can be passed through the end-to-end chain, the creditor’s reference or payment remittance identification should be quoted in the end-to-end transaction identification. OB: The Faster Payments Scheme can only accept 18 characters for the ReferenceInformation field - which is where this ISO field will be mapped.'
-        unstructured:
-          maxLength: 140
-          minLength: 1
-          type: string
-          description: 'Information supplied to enable the matching/reconciliation of an entry with the items that the payment is intended to settle, such as commercial invoices in an accounts’ receivable system, in an unstructured form.'
-      description: 'Information supplied to enable the matching of an entry with the items that the transfer is intended to settle, such as commercial invoices in an accounts’ receivable system.'
-    Value:
-      required:
-        - amount
-        - currency
-      type: object
-      properties:
-        amount:
-          type: number
-          format: double
-        currency:
-          type: string
-          enum:
-            - GBP
-            - EUR
+          description: Resource Uri.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileData'
+        page:
+          $ref: '#/components/schemas/RestResponsePaginationDetails'
+        sort:
+          type: array
+          items:
+            type: string
     FileResponseEnvelope:
       type: object
       properties:
         uri:
           type: string
+          description: Resource Uri.
         data:
-          $ref: '#/components/schemas/FileSummary'
-    FileSummary:
-      required:
-        - batchesDetailsUri
-        - fileName
-        - fileReference
-        - fileStatus
-        - id
-        - totalBatches
-        - totalFileAmount
-        - uploadDate
-        - uri
+          $ref: '#/components/schemas/FileData'
+    FileData:
+      type: object
+      properties:
+        id:
+          type: string
+          description: File ID.
+        uri:
+          type: string
+          description: URI of file resource.
+        status:
+          type: string
+          description: Status of the File.
+          enum:
+            - QUEUED
+            - APPROVAL_PENDING
+            - APPROVAL_REJECTED
+            - ACCEPTED
+            - PARTIALLY_ACCEPTED
+            - COMPLETE
+            - COMPLETE_WITH_ERRORS
+            - IN_PROGRESS
+            - REJECTED
+            - REVOKED
+            - PARTIALLY_REVOKED
+            - PENDING
+            - PENDING_SETTLEMENT
+        fileType:
+          type: string
+          description: File type.
+          enum:
+            - DIRECT_DEBIT
+            - CREDIT_TRANSFER
+        fileGenerationType:
+          type: string
+          description: File generation type.
+          enum:
+            - IMPORT
+            - EXPORT
+        rejectionDetails:
+          $ref: '#/components/schemas/RejectionDetails'
+        newFileName:
+          type: string
+          description: During processing the original file name will have additional
+            Ids and statuses appended, this is the processed file name.
+        originalFileName:
+          type: string
+          description: The original file name as supplied during the upload.
+        creationDateTime:
+          type: string
+          format: date-time
+          description: Date of initial upload.
+        completionDateTime:
+          type: string
+          format: date-time
+          description: Date and time of File's completion.
+        numberOfBatches:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Number of Batches in the File.
+        numberOfTransactions:
+          type: integer
+          minimum: 0
+          format: int32
+          description: Number of Transactions in the File.
+        numberOfUnpaids:
+          type: integer
+          minimum: 0
+          format: int32
+          description: Number of unpaids in the file.
+        totalAmount:
+          type: number
+          description: Total value of Transactions in the File.
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/RestResponseLink'
+    RejectionDetails:
+      type: object
+      properties:
+        rejectionReason:
+          type: string
+          description: Coded rejection reason.
+        rejectionDescription:
+          type: string
+          description: Free text rejection reason description.
+        rejectionDateTime:
+          type: string
+          format: date-time
+          description: Date and time of rejection.
+    RestResponsePaginationDetails:
+      type: object
+      properties:
+        pageNumber:
+          type: integer
+          description: Page Number
+          format: int32
+          default: 1
+        pageSize:
+          type: integer
+          description: Page Size
+          format: int32
+          default: 20
+        totalElements:
+          type: integer
+          description: Total Number of elements returned. Response parameter only
+          format: int32
+        totalPages:
+          type: integer
+          description: Total Number of pages returned. Response parameter only
+          format: int32
+    BatchesListResponseEnvelope:
       type: object
       properties:
         uri:
           type: string
+          description: Resource Uri.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Batch'
+        page:
+          $ref: '#/components/schemas/RestResponsePaginationDetails'
+        sort:
+          type: array
+          items:
+            type: string
+    BatchDetailsResponseEnvelope:
+      type: object
+      properties:
+        uri:
+          type: string
+        data:
+          $ref: '#/components/schemas/Batch'
+    Batch:
+      type: object
+      properties:
         id:
           type: string
-        fileName:
+          description: Batch ID.
+        uri:
           type: string
-        totalBatches:
-          type: integer
-          format: int32
-        totalFileAmount:
-          $ref: '#/components/schemas/Value'
-        uploadDate:
+          description: URI of file resource created.
+        batchReference:
           type: string
-          format: date
-        fileStatus:
+          description: The batch reference provided in imported payment file in Payment Information Id.
+        status:
           type: string
+          description: Status of the Batch.
           enum:
-            - QUEUED
-            - PARTIALLY_REVOKED
-            - CANCELLED
-            - APPROVAL_REJECTED
             - COMPLETE
             - COMPLETE_WITH_ERRORS
-            - REJECTED
-            - ACCEPTED
+            - DUE
             - IN_PROGRESS
+            - REJECTED
             - REVOKED
-            - RETURNED
-            - PARTIALLY_ACCEPTED
-            - APPROVAL_PENDING
-        fileReference:
+            - SETTLED
+            - PENDING
+            - PENDING_SETTLEMENT
+            - RECALLED
+        creationDateTime:
           type: string
-        batchesDetailsUri:
+          format: date-time
+          description: Date and time when the File containing the Batch has been uploaded.
+        dueDate:
           type: string
-    ErrorDetailsItem:
+          description: Date on which the Batch is due.
+          format: date
+        rejectionDetails:
+          $ref: '#/components/schemas/RejectionDetails'
+        numberOfTransactions:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Number of transactions in the Batch.
+        valueOfTransactions:
+          type: number
+          description: Total value of Transactions in the Batch.
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/RestResponseLink'
+    TransactionsListResponseEnvelope:
       type: object
+      properties:
+        uri:
+          type: string
+          description: Resource Uri.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        page:
+          $ref: '#/components/schemas/RestResponsePaginationDetails'
+        sort:
+          type: array
+          items:
+            type: string
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          description: File/Batch Transaction id.
+        uri:
+          type: string
+        amount:
+          type: number
+          description: Payment amount.
+        currency:
+          type: string
+          enum:
+            - GBP
+            - EUR
+          description: Payment currency.
+        processingStatus:
+          type: string
+          description: Processing status.
+          enum:
+            - COMPLETE
+            - REJECTED
+            - PENDING
+        endToEndId:
+          type: string
+          description: Payment End-to-end ID.
+        directDebitTransactionDetails:
+          $ref: '#/components/schemas/DirectDebitTransaction'
+          description: Holds DIRECT_DEBIT type-specific transaction details. Always NULL for CREDIT_TRANSFER transactions.
+        creditTransferTransactionDetails:
+          $ref: '#/components/schemas/CreditTransferTransaction'
+          description: Holds CREDIT_TRANSFER type-specific transaction details. Always NULL for DIRECT_DEBIT transactions.
+        rejectionDetails:
+          $ref: '#/components/schemas/RejectionDetails'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/RestResponseLink'
+    DirectDebitTransaction:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Payment status for DIRECT_DEBIT.
+        debtorName:
+          type: string
+          description: Debtor name for DIRECT_DEBIT.
+        mandateReference:
+          type: string
+          description: Mandate reference for DIRECT_DEBIT.
+        debtorIBAN:
+          type: string
+          description: Debtor IBAN for DIRECT_DEBIT.
+        requestedCollectionDate:
+          type: string
+          description: Requested DIRECT_DEBIT Collection Date.
+          format: date
+    CreditTransferTransaction:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Payment status for CREDIT_TRANSFER.
+        beneficiaryName:
+          type: string
+          description: Beneficiary for CREDIT_TRANSFER.
+        ultimateBeneficiaryName:
+          type: string
+          description: Ultimate beneficiary for CREDIT_TRANSFER.
+        beneficiaryIBAN:
+          type: string
+          description: Beneficiary IBAN for CREDIT_TRANSFER.
+        requestedExecutionDate:
+          type: string
+          description: Requested CREDIT_TRANSFER execution date.
+          format: date
+    ErrorResponse:
+      title: ErrorResponse
+      type: object
+      properties:
+        details:
+          type: array
+          description: Holds list of input validation errors
+          items:
+            $ref: '#/components/schemas/ErrorDetail'
+        returnCode:
+          type: string
+          description: Error type code
+        returnDescription:
+          type: string
+          description: Error type description
+    ErrorDetail:
+      title: ErrorDetail
+      type: object
+      description: Holds list of input validation errors
       properties:
         code:
           type: string
@@ -790,255 +1632,19 @@ components:
         field:
           type: string
           description: JSON path to request object property the error is related to
-      description: Holds list of input validation errors
-    ErrorResponse:
-      type: object
-      properties:
-        returnCode:
+        resourceUri:
           type: string
-          description: Error type code
-        returnDescription:
-          type: string
-          description: Error type description
-        details:
-          type: array
-          description: Holds list of input validation errors
-          items:
-            $ref: '#/components/schemas/ErrorDetailsItem'
-    CopsRequest:
-      required:
-        - account
-      type: object
-      properties:
-        account:
-          $ref: '#/components/schemas/Account'
-        accountType:
-          type: string
-          description: Business - A business owned bank account. Personal - A Person owned bank account
-          enum:
-            - Business
-            - Personal
-    CopsResponse:
-      required:
-        - name
-      type: object
-      properties:
-        matched:
-          type: boolean
-        copsReasonCode:
-          type: string
-          enum:
-            - ANNM
-            - AC01
-            - MBAM
-            - OPTO
-            - ACNS
-            - IVCR
-            - BANM
-            - PANM
-            - BAMM
-            - PAMM
-            - CASS
-            - SCNS
-        name:
-          maxLength: 140
-          minLength: 1
-          type: string
-      description: PaymentResponse
-    CopsResponseEnvelope:
-      required:
-        - data
-        - uri
-      type: object
-      properties:
-        uri:
-          type: string
-          description: Holds resource uri.
-        data:
-          $ref: '#/components/schemas/CopsResponse'
-    PaymentResponseEnvelope:
-      type: object
-      properties:
-        uri:
-          type: string
-        data:
-          $ref: '#/components/schemas/PaymentSummary'
-    PaymentSummary:
-      required:
-        - creditor
-        - creditorAccount
-        - id
-        - instructedAmount
-        - status
-        - uri
-      type: object
-      properties:
-        id:
-          type: string
-        uri:
-          type: string
-        instructedAmount:
-          $ref: '#/components/schemas/Value'
-        creditorAccount:
-          $ref: '#/components/schemas/Account'
-        creditor:
-          $ref: '#/components/schemas/PaymentParty'
-        endToEndIdentification:
-          maxLength: 35
-          minLength: 1
-          type: string
-        executionDate:
-          type: string
-          format: date
-        status:
-          type: string
-          enum:
-            - COMPETE
-            - REJECTED
-        reasonCode:
-          type: string
-        creditTransferUri:
-          $ref: '#/components/schemas/RestResponseLink'
-    RestResponseLink:
-      type: object
-    PaymentsResponseEnvelope:
-      required:
-        - uri
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/PaymentSummary'
-        uri:
-          type: string
-        page:
-          $ref: '#/components/schemas/RestResponsePaginationDetails'
-        sort:
-          type: array
-          items:
-            type: string
-    RestResponsePaginationDetails:
-      type: object
-      properties:
-        pageNumber:
-          type: integer
-          format: int32
-        pageSize:
-          type: integer
-          format: int32
-        totalElements:
-          type: integer
-          format: int32
-        totalPages:
-          type: integer
-          format: int32
-    BatchSummary:
-      required:
-        - batchStatus
-        - categoryPurpose
-        - debtor
-        - debtorAccount
-        - paymentsUri
-        - requestedExecutionDate
-        - ultimateDebtor
-      type: object
-      properties:
-        uri:
-          type: string
-        batchReference:
-          maxLength: 35
-          minLength: 1
-          type: string
-        totalAmount:
-          $ref: '#/components/schemas/Value'
-        totalPayments:
-          maximum: 1000
-          minimum: 1
-          type: integer
-          format: int32
-        debtorAccount:
-          $ref: '#/components/schemas/Account'
-        requestedExecutionDate:
-          type: string
-          format: date
-        debtor:
-          $ref: '#/components/schemas/PaymentParty'
-        ultimateDebtor:
-          $ref: '#/components/schemas/PaymentParty'
-        categoryPurpose:
-          $ref: '#/components/schemas/CategoryPurpose'
-        batchStatus:
-          type: string
-          enum:
-            - CANCELLED
-            - APPROVAL_REJECTED
-            - COMPLETE_WITH_ERRORS
-            - REJECTED
-            - IN_PROGRESS
-            - ACCEPTED
-            - COMPLETE
-            - RETURNED
-            - PARTIALLY_ACCEPTED
-            - APPROVAL_PENDING
-        paymentsUri:
-          type: string
-        postProcessingStatistics:
-          $ref: '#/components/schemas/PostProcessingStatistics'
-    PostProcessingStatistics:
-      type: object
-      properties:
-        successfulPayments:
-          type: integer
-          format: int32
-        failedPayments:
-          type: integer
-          format: int32
-        successfulValue:
-          $ref: '#/components/schemas/Value'
-        failedValue:
-          $ref: '#/components/schemas/Value'
-    BatchesResponseEnvelope:
-      required:
-        - uri
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/BatchSummary'
-        uri:
-          type: string
-        page:
-          $ref: '#/components/schemas/RestResponsePaginationDetails'
-        sort:
-          type: array
-          items:
-            type: string
-    FilesResponseEnvelope:
-      required:
-        - uri
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileSummary'
-        uri:
-          type: string
-        page:
-          $ref: '#/components/schemas/RestResponsePaginationDetails'
-        sort:
-          type: array
-          items:
-            type: string
   securitySchemes:
-    oauth:
+    MerchantApiKey:
+      type: http
+      scheme: basic
+    MerchantOAuth2:
       type: oauth2
       flows:
         password:
-          tokenUrl: 'https://api.naupay.com.com/tokens'
+          tokenUrl: https://api.nuapay.com/oauth/token_key
           scopes:
-            cops: Confirmation of payee request
-            files: Upload of files
-            files_read: List files
+            directdebits_files: Direct Debits Files access
+            directdebits_files_read: Direct Debits Files Read access
+            credittransfers_files: Credit Transfers Files access
+            credittransfers_files_read: Credit Transfers Files Read access
